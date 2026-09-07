@@ -1,0 +1,12 @@
+mne
+mne-bids
+wordfreq
+scikit-learn
+pandas
+numpy
+matplotlib
+seaborn
+tqdm
+transformers
+torch
+osfclient
