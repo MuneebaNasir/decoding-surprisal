@@ -3,3 +3,4 @@ data/
 data_path.txt
 __pycache__/
 *.pyc
+results/_cache/

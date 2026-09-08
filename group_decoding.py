@@ -22,25 +22,60 @@ from masc_lib import decod_subject, get_epochs
 from surprisal import load_surprisal_lookup
 
 
-def subject_curves(subject, bids_root, lookup, sessions):
+def subject_curves(subject, bids_root, lookup, sessions, cache_dir):
+    """Cached per-subject AND per-contrast: whatever kills these runs lands
+    mid-decoding, not mid-loading, so caching each of the three contrasts
+    separately (not just the finished subject) means a retry only ever
+    redoes the one contrast that was interrupted, not the ~1-2min raw
+    load + epoching each time too.
+    """
+    cache_file = cache_dir / f"sub-{subject}.npz"
+    if cache_file.exists():
+        data = np.load(cache_file)
+        times = data["times"]
+        out = {k: data[k] for k in ("wordfreq", "voiced", "surprisal")}
+        print(f"  (from cache)", flush=True)
+        return times, out
+
+    partial_dir = cache_dir / f"_partial_sub-{subject}"
+    contrast_files = {c: partial_dir / f"{c}.npy" for c in ("wordfreq", "voiced", "surprisal")}
+    if all(f.exists() for f in contrast_files.values()) and (partial_dir / "times.npy").exists():
+        times = np.load(partial_dir / "times.npy")
+        out = {c: np.load(f) for c, f in contrast_files.items()}
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        np.savez(cache_file, times=times, **out)
+        print(f"  (assembled from partial cache)", flush=True)
+        return times, out
+
     epochs = get_epochs(subject, bids_root, surprisal_lookup=lookup, sessions=sessions)
     if epochs is None:
         return None
     words = epochs["is_word"]
     phonemes = epochs["not is_word"]
     times = epochs.times
-
-    out = {}
-    out["wordfreq"] = decod_subject(
-        words.get_data() * 1e13, words.metadata["wordfreq"].values, times
-    )
-    out["voiced"] = decod_subject(
-        phonemes.get_data() * 1e13, phonemes.metadata["voiced"].values, times
-    )
     mask = ~pd.isna(words.metadata["surprisal"].values)
-    out["surprisal"] = decod_subject(
-        (words.get_data() * 1e13)[mask], words.metadata["surprisal"].values[mask], times
-    )
+
+    contrast_inputs = {
+        "wordfreq": (words.get_data() * 1e13, words.metadata["wordfreq"].values),
+        "voiced": (phonemes.get_data() * 1e13, phonemes.metadata["voiced"].values),
+        "surprisal": ((words.get_data() * 1e13)[mask], words.metadata["surprisal"].values[mask]),
+    }
+
+    partial_dir.mkdir(parents=True, exist_ok=True)
+    np.save(partial_dir / "times.npy", times)
+    out = {}
+    for name, (X, y) in contrast_inputs.items():
+        part_file = contrast_files[name]
+        if part_file.exists():
+            out[name] = np.load(part_file)
+            print(f"    {name}: from partial cache", flush=True)
+            continue
+        out[name] = decod_subject(X, y, times)
+        np.save(part_file, out[name])
+        print(f"    {name}: done", flush=True)
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    np.savez(cache_file, times=times, **out)
     return times, out
 
 
@@ -59,13 +94,14 @@ def main():
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = out_dir / "_cache"
 
     per_contrast = {"wordfreq": [], "voiced": [], "surprisal": []}
     times = None
     used_subjects = []
     for subject in subjects:
         print(f"=== subject {subject} ===", flush=True)
-        result = subject_curves(subject, args.bids_root, lookup, sessions)
+        result = subject_curves(subject, args.bids_root, lookup, sessions, cache_dir)
         if result is None:
             print(f"  no data for subject {subject}, skipping", flush=True)
             continue

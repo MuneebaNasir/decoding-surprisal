@@ -24,9 +24,10 @@ before, estimated with GPT-2?
 
 ## Data
 
-5 subjects (`03, 04, 05, 06, 08`) from [MEG-MASC](https://github.com/kingjr/meg-masc)
-(OSF project `ag3kj`), not the full 27-subject/~150GB release — enough
-subjects for a real group-level test while staying laptop-sized (~17GB).
+All 8 subjects (`03, 04, 05, 06, 08, 09, 10, 11`) available in this OSF
+component of [MEG-MASC](https://github.com/kingjr/meg-masc) (project
+`ag3kj`) — the full public release has 27 subjects across two OSF
+components (~150GB); this is the first, laptop-sized (~29GB) one.
 
 ```
 python -m venv .venv && source .venv/bin/activate
@@ -40,7 +41,7 @@ python scripts/download_data.py --subject 04 --out data/bids_anonym  # repeat pe
 python baseline_decoding.py --subject 04 --sessions 0,1
 python surprisal.py --subject 04 --out results/surprisal_sub-04.csv
 python extended_decoding.py --subject 04 --sessions 0,1 --surprisal results/surprisal_sub-04.csv
-python group_decoding.py --subjects 03,04,05,06,08 --surprisal results/surprisal_sub-04.csv
+python group_decoding.py --subjects 03,04,05,06,08,09,10,11 --surprisal results/surprisal_sub-04.csv
 ```
 
 `baseline_decoding.py`/`extended_decoding.py` are single-subject (use
@@ -48,26 +49,29 @@ python group_decoding.py --subjects 03,04,05,06,08 --surprisal results/surprisal
 vs `*_ses-01.*` are that comparison). `group_decoding.py` is the main
 result — the group-level test across subjects, below.
 
-## Results (group, n=5 subjects)
+## Results (group, n=8 subjects — all available in this OSF release)
 
-![group decoding curves](results/group_decoding_n5.png)
+![group decoding curves](results/group_decoding_n8.png)
 
-| contrast | subjects | best cluster p |
-|---|---|---|
-| word frequency | 5 | 0.06 |
-| phoneme voicing | 5 | 0.06 |
-| word surprisal | 5 | 0.81 |
+| contrast | subjects | best cluster p | significant timepoints |
+|---|---|---|---|
+| word frequency | 8 | **0.008** | 46 / 81 |
+| phoneme voicing | 8 | **0.008** | 28 / 81 |
+| word surprisal | 8 | 0.15 | 0 / 81 |
 
-This is the statistically correct version of the test: one decoding curve
-per *subject* (not per CV fold), then a cluster-based permutation test
-across subjects — real independent observations, not pseudo-replications
-of one person's data. Word frequency and phoneme voicing both show a
-clear, sustained rise from ~100-500ms with the across-subject error band
-mostly staying above zero — a consistent effect, not noise. Surprisal
-stays flat at zero throughout. Neither effect quite clears p<0.05 (with
-only 5 subjects, the minimum possible p-value is 1/32 ≈ 0.03, so this is
-one permutation-rank away, not a large gap) — more subjects would very
-plausibly push word frequency over the line; see `group_decoding.py`.
+The statistically correct version of the test: one decoding curve per
+*subject* (not per CV fold), then a cluster-based permutation test across
+subjects — real independent observations. At n=8, word frequency and
+phoneme voicing both clear p<0.05 (marked as dots on the plot) — a real,
+significant, group-level effect, not just a visible trend. Word frequency
+is significant from ~100-550ms, voicing from ~90-390ms — both in the
+expected post-word-onset window. Surprisal stays flat, mostly at or below
+zero, across every sample size tested (5 and 8 subjects, 1 and 2
+sessions) — a consistent, honest null, not an artifact of too little data.
+
+With n=5 the same two effects were visible but fell just short of
+significance (p=0.06 both) — see `results/group_decoding_n5.png` for
+that intermediate step.
 
 ## Results (single subject: sub-04, both sessions)
 
@@ -98,11 +102,11 @@ own papers use.
 
 ## Caveat, stated plainly
 
-5 subjects is still a small group — the permutation test's power ceiling
-(min p ≈ 0.03) leaves little room, and both effects that are clearly
-visible in the plot fall just short of the conventional p<0.05 line. This
-is a demonstration that the method, and the statistics, run correctly
-end to end on real data — not a publication-grade significance claim.
+8 subjects is still a small group by the standards of the field (the
+original meg-masc paper used 27) — real, but on the smaller end. The
+word-frequency and voicing effects are genuinely significant at this
+sample size; the surprisal null should be read as "no effect detected
+in 8 subjects," not "proven absent."
 
 ## Attribution
 
