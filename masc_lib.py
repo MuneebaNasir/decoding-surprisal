@@ -4,8 +4,8 @@ The `segment`, `correlate`, `decod`, and `plot` functions below are adapted
 from kingjr/meg-masc's `check_decoding.py` (BSD-3-Clause, Copyright (c)
 2022 Jean-Remi King) -- see LICENSE. `build_metadata` is that script's
 annotation-parsing logic pulled out on its own so it can be reused without
-re-loading full sensor data (used by `surprisal.py`). `decod_per_fold` and
-the surprisal wiring in `build_metadata` are new.
+re-loading full sensor data (used by `surprisal.py`). `decod_per_fold`,
+`decod_subject`, and the surprisal wiring in `build_metadata` are new.
 """
 
 from pathlib import Path
@@ -174,6 +174,26 @@ def decod_per_fold(X, y, times, n_splits=5, random_state=0):
             proba = model.predict_proba(X[test, :, t])[:, 1]
             fold_scores[fold_i, t] = correlate(y[test, None], proba[:, None])[0]
     return fold_scores
+
+
+def decod_subject(X, y, times, n_splits=5, random_state=0):
+    """One pooled decoding score curve per timepoint for a single subject
+    (all trials, all tasks together) -- the right unit of observation for
+    a group-level test across subjects, unlike `decod_per_fold`'s folds
+    (which are pseudo-replications of one subject's data, not independent
+    observations).
+    """
+    y = _binarize(y)
+    model = make_pipeline(StandardScaler(), LinearDiscriminantAnalysis())
+    cv = KFold(n_splits, shuffle=True, random_state=random_state)
+
+    n, nchans, ntimes = X.shape
+    preds = np.zeros((n, ntimes))
+    for t in range(ntimes):
+        preds[:, t] = cross_val_predict(
+            model, X[:, :, t], y, cv=cv, method="predict_proba"
+        )[:, 1]
+    return correlate(y[:, None], preds)
 
 
 def plot(result):
