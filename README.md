@@ -12,6 +12,11 @@ Behav.*](https://www.nature.com/articles/s41562-022-01516-2)): does it also
 encode **word surprisal** — how unpredictable a word is given what came
 before, estimated with GPT-2?
 
+Surprisal is scored one word at a time, not per sentence: for every word,
+GPT-2 estimates -log P(word | every word before it in the story), so
+"studying" in *"Lion was studying"* gets its own high surprisal score
+while "was" (predictable after "Lion" alone) gets a low one.
+
 ## What's original code vs. new
 
 | File | What it is |
