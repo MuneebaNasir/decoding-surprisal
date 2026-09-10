@@ -66,13 +66,11 @@ three** (r≈0.05 around 150-220ms, vs. ~0.03-0.04 for the other two) --
 surprisal isn't just detectable, it's the strongest effect in the set,
 consistent with predictive-coding accounts of speech comprehension.
 
-## Caveat, stated plainly
+## Caveat
 
-8 subjects is still a small group by the standards of the field (the
-original meg-masc paper used 27) -- real, but on the smaller end. All
-three effects are genuinely significant at this sample size, but "found
-at n=8" is a real result that would still benefit from replication at
-the field's usual scale, not a claim that a larger n would change nothing.
+8 subjects is a small group by the standards of the field (the original
+meg-masc paper used 27). All three effects are significant at this
+sample size; replication at a larger scale is a natural next step.
 
 ## Attribution
 
