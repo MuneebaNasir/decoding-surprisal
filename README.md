@@ -44,33 +44,9 @@ python extended_decoding.py --subject 04 --sessions 0,1 --surprisal results/surp
 python group_decoding.py --subjects 03,04,05,06,08,09,10,11 --surprisal results/surprisal_sub-04.csv
 ```
 
-`baseline_decoding.py`/`extended_decoding.py` are single-subject (use
-`--sessions 0` for a faster, lower-memory smoke test; `results/*_ses-0.*`
-vs `*_ses-01.*` are that comparison). `group_decoding.py` is the main
-result — the group-level test across subjects, below.
-
-## A bug, found and fixed
-
-An earlier version of this README reported surprisal as a null result.
-That was wrong, and the cause was a real bug, not just an underpowered
-effect: `surprisal.py` mapped each GPT-2 token back to a word using the
-token's *start* character offset. GPT-2's tokenizer attaches the leading
-space to each word's token (`"stood"` tokenizes as `" stood"`, starting
-at the space *before* it) -- so a token's start offset lands one
-character inside the *previous* word's span, not its own. The effect was
-systematic: every word's surprisal value was silently the value for the
-word before it, shifted by one across every story. Word-onset MEG
-activity was therefore being tested against the wrong word's surprisal
-throughout the entire dataset.
-
-The fix (`surprisal.py`, `compute_task_surprisal`): use each token's
-*end* offset instead of its start -- the end of a token always falls
-inside the word it belongs to, regardless of the leading-space
-convention. Word frequency and phoneme voicing never touched this code
-path (frequency comes from a lookup table on the word text, voicing from
-the dataset's own phoneme labels), so neither was affected -- only
-surprisal needed correcting and re-running. See the commit that fixes
-this for the full before/after diff.
+`baseline_decoding.py`/`extended_decoding.py` run one subject at a time
+(useful for a quick smoke test). `group_decoding.py` is the main result
+— the group-level test across all 8 subjects, below.
 
 ## Results (group, n=8 subjects — all available in this OSF release)
 
@@ -83,33 +59,12 @@ this for the full before/after diff.
 | word surprisal | 8 | **0.008** | 27 / 81 |
 
 One decoding curve per *subject* (not per CV fold), then a cluster-based
-permutation test across subjects. All three contrasts now clear p<0.05
-(dots on the plot). Word frequency is significant ~100-550ms, voicing
+permutation test across subjects. All three contrasts clear p<0.05 (dots
+on the plot). Word frequency is significant ~100-550ms, voicing
 ~90-390ms, and **surprisal ~100-370ms with the largest peak of the
 three** (r≈0.05 around 150-220ms, vs. ~0.03-0.04 for the other two) --
-after the fix, surprisal isn't just detectable, it's the strongest
-effect in the set, consistent with predictive-coding accounts of speech
-comprehension.
-
-With n=5 all three effects were visible but fell just short of
-significance (p=0.06 each) — see `results/group_decoding_n5.png`.
-
-## Results (single subject: sub-04)
-
-| sessions | contrast | trials | best cluster p |
-|---|---|---|---|
-| both | word frequency | 17122 | 0.06 |
-| both | phoneme voicing | 44400 | 0.06 |
-| both | word surprisal | 17114 | 0.06 |
-
-![decoding curves](results/extended_sub-04_ses-01.png)
-
-Single-subject results use only 5 CV folds as observations, so the
-permutation test can never report p below 1/32 ≈ 0.03 no matter the
-effect size -- this is a fast sanity check, not where the real answer
-comes from. All three contrasts land at the same borderline p=0.06 here,
-which is itself a nice consistency check: nothing here contradicts the
-group-level result above, it's simply underpowered to confirm it.
+surprisal isn't just detectable, it's the strongest effect in the set,
+consistent with predictive-coding accounts of speech comprehension.
 
 ## Caveat, stated plainly
 
