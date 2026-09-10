@@ -91,7 +91,11 @@ def compute_task_surprisal(words, tokenizer, model):
     for tok_idx, (start, end) in enumerate(offsets):
         if end <= start:
             continue
-        word_idx = int(np.searchsorted(starts_arr, start, side="right") - 1)
+        # GPT-2's tokenizer attaches the leading space to each word's
+        # token (e.g. "stood" -> " stood", offset starting at the space
+        # *before* it) -- using `start` here would land in the *previous*
+        # word's span. `end - 1` always falls inside the right word.
+        word_idx = int(np.searchsorted(starts_arr, end - 1, side="right") - 1)
         if np.isnan(tok_surprisal[tok_idx]):
             continue
         word_surprisal[word_idx] += tok_surprisal[tok_idx]

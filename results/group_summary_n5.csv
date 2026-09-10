@@ -1,4 +1,4 @@
 label,n_subjects,min_cluster_p,n_significant_timepoints
 wordfreq,5,0.0625,0
 voiced,5,0.0625,0
-surprisal,5,0.8125,0
+surprisal,5,0.0625,0
