@@ -13,9 +13,11 @@ encode **word surprisal** — how unpredictable a word is given what came
 before, estimated with GPT-2?
 
 Surprisal is scored one word at a time, not per sentence: for every word,
-GPT-2 estimates -log P(word | every word before it in the story), so
-"studying" in *"Lion was studying"* gets its own high surprisal score
-while "was" (predictable after "Lion" alone) gets a low one.
+GPT-2 estimates -log P(word | every word before it in the story). One of
+the actual stories opens with *"Tara stood stock still"* — "stock" scores
+9.8 (surprising: nothing before it predicts that word), but once it's
+there, "still" scores 0.2 (near-certain: "stock still" is a fixed
+phrase, so the model already expects "still" to follow).
 
 ## What's original code vs. new
 
