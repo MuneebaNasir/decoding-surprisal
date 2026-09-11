@@ -4,8 +4,14 @@ MEG-MASC (Gwilliams, King et al., 2022) is hosted on OSF project `ag3kj`.
 This pulls a single subject (both sessions) plus the top-level BIDS
 sidecar files needed by mne-bids, instead of the full ~150GB dataset.
 
+The full 27-subject release is split across several OSF components (each
+part was frozen once it hit OSF's per-component storage cap): `ag3kj`
+(part 1, subjects 03-11), `h2tzn` (part 2, subjects 12-23), `u5327`
+(part 3, subjects 24-27).
+
 Usage:
     python scripts/download_data.py --subject 04 --out data/bids_anonym
+    python scripts/download_data.py --subject 14 --project h2tzn --out data/bids_anonym
 """
 
 import argparse
@@ -14,13 +20,13 @@ from pathlib import Path
 
 from osfclient.api import OSF
 
-PROJECT_ID = "ag3kj"
 ROOT_FILES = {"dataset_description.json", "participants.tsv", "README.txt"}
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--subject", default="04", help="subject id, e.g. 04")
+    parser.add_argument("--project", default="ag3kj", help="OSF component id")
     parser.add_argument("--out", default="data/bids_anonym")
     args = parser.parse_args()
 
@@ -28,7 +34,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     osf = OSF()
-    project = osf.project(PROJECT_ID)
+    project = osf.project(args.project)
     storage = project.storage("osfstorage")
 
     sub_prefix = f"/sub-{args.subject}/"

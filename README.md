@@ -31,15 +31,16 @@ phrase, so the model already expects "still" to follow).
 
 ## Data
 
-All 8 subjects (`03, 04, 05, 06, 08, 09, 10, 11`) available in this OSF
-component of [MEG-MASC](https://github.com/kingjr/meg-masc) (project
-`ag3kj`) — the full public release has 27 subjects across two OSF
-components (~150GB); this is the first, laptop-sized (~29GB) one.
+All 27 subjects of [MEG-MASC](https://github.com/kingjr/meg-masc) (~150GB),
+split across three OSF components, each frozen once it hit OSF's
+per-component storage cap: `ag3kj` (subjects 01-11), `h2tzn` (subjects
+12-23), `u5327` (subjects 24-27).
 
 ```
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/download_data.py --subject 04 --out data/bids_anonym  # repeat per subject
+python scripts/download_data.py --subject 14 --project h2tzn --out data/bids_anonym
 ```
 
 ## Run
@@ -48,36 +49,41 @@ python scripts/download_data.py --subject 04 --out data/bids_anonym  # repeat pe
 python baseline_decoding.py --subject 04 --sessions 0,1
 python surprisal.py --subject 04 --out results/surprisal_sub-04.csv
 python extended_decoding.py --subject 04 --sessions 0,1 --surprisal results/surprisal_sub-04.csv
-python group_decoding.py --subjects 03,04,05,06,08,09,10,11 --surprisal results/surprisal_sub-04.csv
+python group_decoding.py --subjects $(printf '%02d,' {1..27} | sed 's/,$//') --surprisal results/surprisal_sub-04.csv
 ```
 
 `baseline_decoding.py`/`extended_decoding.py` run one subject at a time
 (useful for a quick smoke test). `group_decoding.py` is the main result
-— the group-level test across all 8 subjects, below.
+— the group-level test across all 27 subjects, below.
 
-## Results (group, n=8 subjects — all available in this OSF release)
+## Results (group, n=27 subjects — the full public MEG-MASC release)
 
-![group decoding curves](results/group_decoding_n8.png)
+![group decoding curves](results/group_decoding_n27.png)
 
 | contrast | subjects | best cluster p | significant timepoints |
 |---|---|---|---|
-| word frequency | 8 | **0.008** | 46 / 81 |
-| phoneme voicing | 8 | **0.008** | 28 / 81 |
-| word surprisal | 8 | **0.008** | 27 / 81 |
+| word frequency | 27 | **0.0001** | 58 / 81 |
+| phoneme voicing | 27 | **0.0001** | 47 / 81 |
+| word surprisal | 27 | **0.0001** | 54 / 81 |
 
 One decoding curve per *subject* (not per CV fold), then a cluster-based
-permutation test across subjects. All three contrasts clear p<0.05 (dots
-on the plot). Word frequency is significant ~100-550ms, voicing
-~90-390ms, and **surprisal ~100-370ms with the largest peak of the
-three** (r≈0.05 around 150-220ms, vs. ~0.03-0.04 for the other two) --
-surprisal isn't just detectable, it's the strongest effect in the set,
-consistent with predictive-coding accounts of speech comprehension.
+permutation test across subjects (10,000 permutations, since exact
+sign-flip enumeration is only tractable up to ~13 subjects). All three
+contrasts clear p<0.05 (dots on the plot), and at this sample size clear
+it at the strongest resolution 10,000 permutations can report
+(p=0.0001, i.e. no permutation of the sign flips scored higher than the
+real data). Word frequency is significant ~30-600ms (peak r≈0.045 at
+220ms), voicing ~60-520ms (peak r≈0.035 at 210ms), and surprisal
+~70-600ms (peak r≈0.041 at 220ms) — all three widen and sharpen
+relative to the earlier n=8 subset, and surprisal remains competitive
+with word frequency as the strongest effect, consistent with
+predictive-coding accounts of speech comprehension.
 
 ## Caveat
 
-8 subjects is a small group by the standards of the field (the original
-meg-masc paper used 27). All three effects are significant at this
-sample size; replication at a larger scale is a natural next step.
+This is now the full 27-subject MEG-MASC release, matching the sample
+size of the original meg-masc paper — the earlier n=8 caveat (a subset
+limited by what fit in a single OSF component) no longer applies.
 
 ## Attribution
 

@@ -120,8 +120,11 @@ def main():
 
     for contrast, curves in per_contrast.items():
         mat = np.array(curves)  # (n_subjects, n_times)
+        # Exact sign-flip test while it's cheap (2**n <= 10000, i.e. n <= 13);
+        # beyond that, fall back to standard Monte Carlo permutation sampling.
+        n_permutations = min(2**n_subjects, 10000)
         t_obs, clusters, cluster_p, _ = permutation_cluster_1samp_test(
-            mat, n_permutations=2**n_subjects, tail=0, seed=0, out_type="mask"
+            mat, n_permutations=n_permutations, tail=0, seed=0, out_type="mask"
         )
         sig_mask = np.zeros(len(times), dtype=bool)
         for cl, p in zip(clusters, cluster_p):
